@@ -1,0 +1,38 @@
+{
+	"name": "Blues-Minimal-I2C",
+	"version": "0.0.1",
+	"keywords": [
+		"Blues",
+		"NoteCard",
+		"RAK4630",
+		"WisBlock"
+	],
+	"description": "Library to communicate with Blues.IO Notecards over I2C. Minimized version with static memory allocation. Supports only I2C communication to the NoteCard",
+	"frameworks": [
+		"arduino"
+	],
+	"platforms": [
+		"nordicnrf52"
+	],
+	"license": "MIT",
+	"authors": [
+		{
+			"email": "bernd.giesecke@rakwireless.com",
+			"url": "https://www.rakwireless.com",
+			"maintainer": true,
+			"name": "Bernd Giesecke"
+		}
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/beegee-tokyo/Blues-Minimal-I2C"
+	},
+	"dependencies": [
+		{
+			"owner": "sabas1080",
+			"name": "CayenneLPP",
+			"version": "*"
+		}
+	],
+	"homepage": "https://github.com/beegee-tokyo/Blues-Minimal-I2C"
+}
