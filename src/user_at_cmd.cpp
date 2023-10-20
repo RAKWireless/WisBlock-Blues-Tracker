@@ -234,7 +234,6 @@ int at_query_blues_sim_set(void)
 
 /**
  * @brief Set Blues NoteCard mode
- *       /// \todo work in progress
  *
  * @param str params as string, format 0 or 1
  * @return int

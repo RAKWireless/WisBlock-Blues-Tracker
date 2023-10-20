@@ -313,6 +313,13 @@ void blues_hub_status(void)
 	}
 }
 
+/**
+ * @brief 	Switch GNSS between continuous and periodic mode
+ * 
+ * @param continuous_on true for continuous mode, false for periodic mode
+ * @return true if switch was successful
+ * @return false if switch failed
+ */
 bool blues_switch_gnss_mode(bool continuous_on)
 {
 	bool request_success = false;
@@ -610,31 +617,30 @@ bool blues_get_location(void)
 		MYLOG("BLUES", "card.time request failed");
 	}
 
-	// Check the age of the GNSS location
-	if (got_card_time && got_gnss_time)
-	// if (got_gnss_location)
-	{
-		if ((current_card_time - last_gnss_update) > (g_lorawan_settings.send_repeat_time / 1000 / 2))
-		{
-			request_success = false;
-			MYLOG("BLUES", "Last GNSS location is older than acquisition time (%ld), delete old location", (current_card_time - last_gnss_update));
-			// Clear last GPS location
-			for (int try_send = 0; try_send < 3; try_send++)
-			{
-				rak_blues.start_req((char *)"card.location.mode");
-				rak_blues.add_bool_entry((char *)"delete", true);
-				if (rak_blues.send_req())
-				{
-					request_success = true;
-					break;
-				}
-			}
-			if (!request_success)
-			{
-				MYLOG("BLUES", "card.location.mode delete last location request failed");
-			}
-		}
-	}
+	// // Check the age of the GNSS location
+	// if (got_card_time && got_gnss_time)
+	// {
+	// 	if ((current_card_time - last_gnss_update) > (g_lorawan_settings.send_repeat_time / 1000 / 2))
+	// 	{
+	// 		request_success = false;
+	// 		MYLOG("BLUES", "Last GNSS location is older than acquisition time (%ld), delete old location", (current_card_time - last_gnss_update));
+	// 		// Clear last GPS location
+	// 		for (int try_send = 0; try_send < 3; try_send++)
+	// 		{
+	// 			rak_blues.start_req((char *)"card.location.mode");
+	// 			rak_blues.add_bool_entry((char *)"delete", true);
+	// 			if (rak_blues.send_req())
+	// 			{
+	// 				request_success = true;
+	// 				break;
+	// 			}
+	// 		}
+	// 		if (!request_success)
+	// 		{
+	// 			MYLOG("BLUES", "card.location.mode delete last location request failed");
+	// 		}
+	// 	}
+	// }
 	return result;
 }
 

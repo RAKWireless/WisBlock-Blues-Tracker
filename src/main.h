@@ -103,14 +103,6 @@ bool blues_send_payload(uint8_t *data, uint16_t data_len);
 bool blues_switch_gnss_mode(bool continuous_on);
 void blues_card_restore(void);
 void blues_attn_cb(void);
-// void add_string_entry(char *type, char *value);
-// void add_bool_entry(char *type, bool value);
-// void add_int32_entry(char *type, int value);
-// void add_float_entry(char *type, float value);
-// void add_nested_string_entry(char *type, char *nested, char *value);
-// void add_nested_int32_entry(char *type, char *nested, int value);
-// void add_nested_bool_entry(char *type, char *nested, bool value);
-// void add_nested_float_entry(char *type, char *nested, float value);
 extern RAK_BLUES rak_blues;
 extern s_blues_settings g_blues_settings;
 

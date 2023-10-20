@@ -285,16 +285,52 @@ void RAK_BLUES::add_nested_bool_entry(char *type, char *nested, bool value)
 	note_json[type][nested] = value;
 }
 
+/**
+ * @brief Add nested float entry to JSON document
+ *
+ * @param type char * name
+ * @param nested char * nested name
+ * @param value float value
+ */
+void RAK_BLUES::add_nested_float_entry(char *type, char *nested, float value)
+{
+	note_json[type][nested] = value;
+}
+
+/**
+ * @brief Check if the response has a specific entry
+ *
+ * @param type entry name as char *
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::has_entry(char *type)
 {
 	return note_json.containsKey(type);
 }
 
+/**
+ * @brief Check if the response has a specific nested entry
+ *
+ * @param type entry name as char *
+ * @param nested nested level name as char *
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::has_nested_entry(char *type, char *nested)
 {
 	return note_json[type].containsKey(nested);
 }
 
+/**
+ * @brief Get string entry (char array) from the response
+ *
+ * @param type entry name as char *
+ * @param value (out) address of char array to write the string to
+ * @param value_size size of target char array
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_string_entry(char *type, char *value, uint16_t value_size)
 {
 	if (has_entry(type))
@@ -306,6 +342,14 @@ bool RAK_BLUES::get_string_entry(char *type, char *value, uint16_t value_size)
 	return false;
 }
 
+/**
+ * @brief Get bool entry from the response
+ *
+ * @param type entry name as char *
+ * @param value (out) address of bool variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_bool_entry(char *type, bool &value)
 {
 	if (has_entry(type))
@@ -316,6 +360,14 @@ bool RAK_BLUES::get_bool_entry(char *type, bool &value)
 	return false;
 }
 
+/**
+ * @brief Get signed 32bit integer entry from the response
+ *
+ * @param type entry name as char *
+ * @param value (out) address of signed integer variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_int32_entry(char *type, int32_t &value)
 {
 	if (has_entry(type))
@@ -326,6 +378,14 @@ bool RAK_BLUES::get_int32_entry(char *type, int32_t &value)
 	return false;
 }
 
+/**
+ * @brief Get unsigned 32bit integer entry from the response
+ *
+ * @param type entry name as char *
+ * @param value (out) address of unsigned integer variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_uint32_entry(char *type, uint32_t &value)
 {
 	if (has_entry(type))
@@ -336,6 +396,14 @@ bool RAK_BLUES::get_uint32_entry(char *type, uint32_t &value)
 	return false;
 }
 
+/**
+ * @brief Get float entry from the response
+ *
+ * @param type entry name as char *
+ * @param value (out) address of float variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_float_entry(char *type, float &value)
 {
 	if (has_entry(type))
@@ -346,6 +414,16 @@ bool RAK_BLUES::get_float_entry(char *type, float &value)
 	return false;
 }
 
+/**
+ * @brief Get nested string entry (char array) from the response
+ *
+ * @param type entry name as char *
+ * @param nested nested level name as char *
+ * @param value (out) address of char array to write the string to
+ * @param value_size size of target char array
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_nested_string_entry(char *type, char *nested, char *value, uint16_t value_size)
 {
 	if (note_json[type].containsKey(nested))
@@ -357,6 +435,15 @@ bool RAK_BLUES::get_nested_string_entry(char *type, char *nested, char *value, u
 	return false;
 }
 
+/**
+ * @brief Get nested signed 32bit integer entry from the response
+ *
+ * @param type entry name as char *
+ * @param nested nested level name as char *
+ * @param value (out) address of signed 32bit integer variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_nested_int32_entry(char *type, char *nested, int32_t &value)
 {
 	if (has_entry(type))
@@ -367,6 +454,15 @@ bool RAK_BLUES::get_nested_int32_entry(char *type, char *nested, int32_t &value)
 	return false;
 }
 
+/**
+ * @brief Get nested unsigned 32bit integer entry from the response
+ *
+ * @param type entry name as char *
+ * @param nested nested level name as char *
+ * @param value (out) address of unsigned 32bit integer variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_nested_uint32_entry(char *type, char *nested, uint32_t &value)
 {
 	if (has_entry(type))
@@ -377,6 +473,15 @@ bool RAK_BLUES::get_nested_uint32_entry(char *type, char *nested, uint32_t &valu
 	return false;
 }
 
+/**
+ * @brief Get nested bool entry from the response
+ *
+ * @param type entry name as char *
+ * @param nested nested level name as char *
+ * @param value (out) address of bool variable to write the value to
+ * @return true if entry was found
+ * @return false if entry was not found
+ */
 bool RAK_BLUES::get_nested_bool_entry(char *type, char *nested, bool &value)
 {
 	if (has_entry(type))
@@ -385,18 +490,6 @@ bool RAK_BLUES::get_nested_bool_entry(char *type, char *nested, bool &value)
 		return true;
 	}
 	return false;
-}
-
-/**
- * @brief Add nested float entry to JSON document
- *
- * @param type char * name
- * @param nested char * nested name
- * @param value float value
- */
-void RAK_BLUES::add_nested_float_entry(char *type, char *nested, float value)
-{
-	note_json[type][nested] = value;
 }
 
 /**
