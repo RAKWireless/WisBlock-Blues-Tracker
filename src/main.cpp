@@ -34,8 +34,10 @@ bool has_blues = false;
 SoftwareTimer delayed_sending;
 void delayed_cellular(TimerHandle_t unused);
 
-// SoftwareTimer wait_gnss;
-// void waited_location(TimerHandle_t unused);
+SoftwareTimer wait_gnss;
+void waited_location(TimerHandle_t unused);
+
+bool gnss_active = false;
 
 uint8_t send_counter = 0;
 
@@ -77,9 +79,10 @@ bool init_app(void)
 {
 	MYLOG("APP", "init_app");
 
-	MYLOG("INI", "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-	MYLOG("INI", "WisBlock Blues Tracker");
-	MYLOG("INI", "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+	Serial.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+	Serial.println("WisBlock Blues Tracker");
+	Serial.printf("FW Ver %d.%d.%d\n", SW_VERSION_1, SW_VERSION_2, SW_VERSION_3);
+	Serial.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
 	// Initialize User AT commands
 	init_user_at();
@@ -97,6 +100,10 @@ bool init_app(void)
 	{
 		AT_PRINTF("+EVT:CELLULAR_ERROR");
 	}
+	else
+	{
+		AT_PRINTF("+EVT:RAK13102");
+	}
 
 	pinMode(WB_IO2, OUTPUT);
 	digitalWrite(WB_IO2, LOW);
@@ -106,7 +113,8 @@ bool init_app(void)
 
 	delayed_sending.begin(15000, delayed_cellular, NULL, false);
 
-	// wait_gnss.begin(30000, waited_location, NULL, false);
+	// Set GNSS scan time to 2 minutes
+	wait_gnss.begin(120000, waited_location, NULL, false);
 
 	// Start the send interval timer and send a first message
 	if (!g_lorawan_settings.auto_join)
@@ -149,18 +157,33 @@ void app_event_handler(void)
 
 		MYLOG("APP", "Timer wakeup, start GNSS");
 
-		// 	blues_switch_gnss_mode(true);
+		if (gnss_active)
+		{
+			MYLOG("APP", "GNSS already active");
+		}
+		else
+		{
+			MYLOG("APP", "GNSS inactive, start it");
+			blues_switch_gnss_mode(true);
+			gnss_active = true;
+			wait_gnss.start();
+		}
+	}
 
-		// 	wait_gnss.start();
-		// }
+	// GNSS finished event
+	if ((g_task_event_type & GNSS_FINISH) == GNSS_FINISH)
+	{
+		g_task_event_type &= N_GNSS_FINISH;
 
-		// // GNSS finished event
-		// if ((g_task_event_type & GNSS_FINISH) == GNSS_FINISH)
-		// {
-		// 	g_task_event_type &= N_GNSS_FINISH;
+		MYLOG("APP", "GNSS wait finished");
+		gnss_active = false;
+		api_timer_start();
 
-		// 	MYLOG("APP", "GNSS wait finished");
-		// 	blues_switch_gnss_mode(false);
+		// Enable motion trigger
+		if (!blues_enable_attn(true))
+		{
+			MYLOG("APP", "Rearm location trigger failed");
+		}
 
 		// Reset the packet
 		g_solution_data.reset();
@@ -169,6 +192,9 @@ void app_event_handler(void)
 		{
 			MYLOG("APP", "Failed to get location");
 		}
+
+		// Disable GNSS
+		blues_switch_gnss_mode(false);
 
 		// Get battery level
 		float batt_level_f = read_batt();
@@ -326,27 +352,47 @@ void app_event_handler(void)
 			MYLOG("APP", "Skip USE_CELLULAR, no NoteCard available");
 		}
 	}
-
 	// Blues ATTN event
 	if ((g_task_event_type & BLUES_ATTN) == BLUES_ATTN)
 	{
 		g_task_event_type &= N_BLUES_ATTN;
-		if (has_blues)
+
+		MYLOG("APP", "ATTN triggered");
+
+		uint8_t attn_reason = blues_attn_reason();
+
+		switch (attn_reason)
 		{
-			// Send over cellular connection
-			MYLOG("APP", "Blues ATTN event");
+			// Motion detected
+		case 1:
+			if (gnss_active)
+			{
+				MYLOG("APP", "GNSS already active");
+			}
+			else
+			{
+				MYLOG("APP", "GNSS inactive, start it");
 
-			rak_blues.start_req((char *)"card.attn");
-			rak_blues.send_req();
+				// Enable GNSS
+				blues_switch_gnss_mode(true);
 
-			rak_blues.start_req((char *)"card.time");
-			rak_blues.send_req();
+				// Enable Location event
+				if (!blues_enable_attn(false))
+				{
+					MYLOG("APP", "Rearm location trigger failed");
+				}
 
-			// blues_enable_attn();
-		}
-		else
-		{
-			MYLOG("APP", "Skip BLUES_ATTN, no NoteCard available");
+				api_timer_stop();
+
+				wait_gnss.start();
+			}
+			break;
+			// Location fix (We ignore if motion and location found are reported together)
+		case 2:
+		case 3:
+			wait_gnss.stop();
+			g_task_event_type |= GNSS_FINISH;
+			break;
 		}
 	}
 }

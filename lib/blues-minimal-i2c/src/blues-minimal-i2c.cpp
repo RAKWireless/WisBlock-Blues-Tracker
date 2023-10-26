@@ -13,6 +13,29 @@
 /**
  * @brief Construct a new RAK_BLUES instance
  *
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"hub.set"))
+		{
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 RAK_BLUES::RAK_BLUES(byte addr)
 {
@@ -34,9 +57,32 @@ void RAK_BLUES::I2C_RST(void)
 /**
  * @brief Create a request structure to be sent to the NoteCard
  *
- * @param request_name name of request, e.g. card.wireless
+ * @param request name of request, e.g. card.wireless
  * @return true if request could be created
  * @return false if request could not be created
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"hub.set"))
+		{
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::start_req(char *request)
 {
@@ -55,13 +101,36 @@ bool RAK_BLUES::start_req(char *request)
  * @param resp_len max length of buffer for the Notecard response
  * @return true if request could be sent and the response does not have "err"
  * @return false if request could not be sent or the response did have "err"
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"hub.set"))
+		{
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::send_req(char *response, uint16_t resp_len)
 {
 
 	// Send the request
-#if BLUES_DEBUG > 0
 	size_t jsonLen = serializeJson(note_json, in_out_buff, 4096);
+#if BLUES_DEBUG > 0
 	BLUES_LOG("BLUES", "Request: %s", in_out_buff);
 #endif
 
@@ -183,10 +252,34 @@ bool RAK_BLUES::send_req(char *response, uint16_t resp_len)
 }
 
 /**
- * @brief Add C-String entry to JSON document
+ * @brief Add C-String entry to request
  *
  * @param type char * name
  * @param value char * value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"hub.set"))
+		{
+			rak_blues.add_string_entry((char *)"mode", (char *)"continuous");
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_string_entry(char *type, char *value)
 {
@@ -194,10 +287,34 @@ void RAK_BLUES::add_string_entry(char *type, char *value)
 }
 
 /**
- * @brief Add boolean entry to JSON document
+ * @brief Add boolean entry to request
  *
  * @param type char * name
  * @param value bool value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"card.motion.mode"))
+		{
+			rak_blues.add_bool_entry((char *)"start", true);
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_bool_entry(char *type, bool value)
 {
@@ -205,10 +322,35 @@ void RAK_BLUES::add_bool_entry(char *type, bool value)
 }
 
 /**
- * @brief Add integer entry to JSON document
+ * @brief Add integer entry to request
  *
  * @param type char * name
  * @param value integer value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"card.motion.mode"))
+		{
+			rak_blues.add_int32_entry((char *)"sensitivity", 1);
+
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_int32_entry(char *type, int32_t value)
 {
@@ -216,10 +358,35 @@ void RAK_BLUES::add_int32_entry(char *type, int32_t value)
 }
 
 /**
- * @brief Add unsigned integer entry to JSON document
+ * @brief Add unsigned integer entry to request
  *
  * @param type char * name
  * @param value unsigned integer value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"card.motion.mode"))
+		{
+			rak_blues.add_uint32_entry((char *)"sensitivity", 1);
+
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_uint32_entry(char *type, uint32_t value)
 {
@@ -227,10 +394,35 @@ void RAK_BLUES::add_uint32_entry(char *type, uint32_t value)
 }
 
 /**
- * @brief Add float entry to JSON document
+ * @brief Add float entry to request
  *
  * @param type char * name
  * @param value float value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+   void setup()
+   {
+		if (rak_blues.start_req((char *)"card.motion.mode"))
+		{
+			rak_blues.add_float_entry((char *)"sensitivity", 324.56);
+
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+   }
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_float_entry(char *type, float value)
 {
@@ -238,11 +430,42 @@ void RAK_BLUES::add_float_entry(char *type, float value)
 }
 
 /**
- * @brief Add nested C-String entry to JSON document
+ * @brief Add nested C-String entry to request
  *
  * @param type char * name
  * @param nested char * nested name
  * @param value char * value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			char node_id[24];
+			sprintf(node_id, "%02x%02x%02x%02x%02x%02x%02x%02x",
+				g_lorawan_settings.node_device_eui[0], g_lorawan_settings.node_device_eui[1],
+				g_lorawan_settings.node_device_eui[2], g_lorawan_settings.node_device_eui[3],
+				g_lorawan_settings.node_device_eui[4], g_lorawan_settings.node_device_eui[5],
+				g_lorawan_settings.node_device_eui[6], g_lorawan_settings.node_device_eui[7]);
+			rak_blues.add_nested_string_entry((char *)"body", (char *)"dev_eui", node_id);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_nested_string_entry(char *type, char *nested, char *value)
 {
@@ -250,11 +473,36 @@ void RAK_BLUES::add_nested_string_entry(char *type, char *nested, char *value)
 }
 
 /**
- * @brief Add nested integer entry to JSON document
+ * @brief Add nested integer entry to request
  *
  * @param type char * name
  * @param nested char * nested name
  * @param value integer value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			rak_blues.add_nested_int32_entry((char *)"body", (char *)"number", -65534);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_nested_int32_entry(char *type, char *nested, int32_t value)
 {
@@ -262,11 +510,36 @@ void RAK_BLUES::add_nested_int32_entry(char *type, char *nested, int32_t value)
 }
 
 /**
- * @brief Add nested unsigned integer entry to JSON document
+ * @brief Add nested unsigned integer entry to request
  *
  * @param type char * name
  * @param nested char * nested name
  * @param value unsigned integer value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			rak_blues.add_nested_uint32_entry((char *)"body", (char *)"number", 65534);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_nested_uint32_entry(char *type, char *nested, uint32_t value)
 {
@@ -274,11 +547,36 @@ void RAK_BLUES::add_nested_uint32_entry(char *type, char *nested, uint32_t value
 }
 
 /**
- * @brief Add nested bool entry to JSON document
+ * @brief Add nested bool entry to request
  *
  * @param type char * name
  * @param nested char * nested name
  * @param value char * value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			rak_blues.add_nested_bool_entry((char *)"body", (char *)"valid", false);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_nested_bool_entry(char *type, char *nested, bool value)
 {
@@ -286,11 +584,36 @@ void RAK_BLUES::add_nested_bool_entry(char *type, char *nested, bool value)
 }
 
 /**
- * @brief Add nested float entry to JSON document
+ * @brief Add nested float entry to request
  *
  * @param type char * name
  * @param nested char * nested name
  * @param value float value
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			rak_blues.add_nested_float_entry((char *)"body", (char *)"temperature", 32.8);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 void RAK_BLUES::add_nested_float_entry(char *type, char *nested, float value)
 {
@@ -303,6 +626,35 @@ void RAK_BLUES::add_nested_float_entry(char *type, char *nested, float value)
  * @param type entry name as char *
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char str_value[128];
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"status"))
+			{
+				rak_blues.get_string_entry((char *)"status", str_value, 128);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::has_entry(char *type)
 {
@@ -316,6 +668,35 @@ bool RAK_BLUES::has_entry(char *type)
  * @param nested nested level name as char *
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char str_value[128];
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_nested_entry((char *)"status"), (char *)"error"))
+			{
+				rak_blues.get_nested_string_entry((char *)"status", (char *)"error"), str_value, 128);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::has_nested_entry(char *type, char *nested)
 {
@@ -330,14 +711,106 @@ bool RAK_BLUES::has_nested_entry(char *type, char *nested)
  * @param value_size size of target char array
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char str_value[128];
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"status"))
+			{
+				rak_blues.get_string_entry((char *)"status", str_value, 128);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_string_entry(char *type, char *value, uint16_t value_size)
 {
 	if (has_entry(type))
 	{
 		char *entry_str = (char *)note_json[type].as<const char *>();
+		BLUES_LOG("get_string_entry", "Entry %s", note_json[type].as<const char *>());
+
 		strncpy(value, entry_str, value_size);
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_string_entry", "Entry %s not found", type);
+	}
+	return false;
+}
+
+/**
+ * @brief Get string entry (char array) from response when in an array
+ *
+ * @param type entry name as char *
+ * @param value (out) address of char array to write the string to
+ * @param value_size size of target char array
+ * @return true if entry was found
+ * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char str_value[128];
+
+	// {"files":["motion"],"set":true}
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.attn"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"files"))
+			{
+				rak_blues.get_string_entry((char *)"files", str_value, 128);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
+ */
+bool RAK_BLUES::get_string_entry_from_array(char *type, char *value, uint16_t value_size)
+{
+	if (has_entry(type))
+	{
+		char *entry_str = (char *)note_json[type][0].as<const char *>();
+		BLUES_LOG("get_string_entry", "Entry %s", note_json[type][0].as<const char *>());
+
+		strncpy(value, entry_str, value_size);
+		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_string_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -349,6 +822,35 @@ bool RAK_BLUES::get_string_entry(char *type, char *value, uint16_t value_size)
  * @param value (out) address of bool variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	bool result;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"status"))
+			{
+				rak_blues.get_bool_entry((char *)"status", result);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_bool_entry(char *type, bool &value)
 {
@@ -356,6 +858,10 @@ bool RAK_BLUES::get_bool_entry(char *type, bool &value)
 	{
 		value = note_json[type].as<bool>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_bool_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -367,6 +873,35 @@ bool RAK_BLUES::get_bool_entry(char *type, bool &value)
  * @param value (out) address of signed integer variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	int32_t value;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"status"))
+			{
+				rak_blues.get_int32_entry((char *)"status", value);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_int32_entry(char *type, int32_t &value)
 {
@@ -374,6 +909,10 @@ bool RAK_BLUES::get_int32_entry(char *type, int32_t &value)
 	{
 		value = note_json[type].as<int32_t>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_int32_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -385,6 +924,35 @@ bool RAK_BLUES::get_int32_entry(char *type, int32_t &value)
  * @param value (out) address of unsigned integer variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	uint32_t value;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"status"))
+			{
+				rak_blues.get_uint32_entry((char *)"status", value);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_uint32_entry(char *type, uint32_t &value)
 {
@@ -392,6 +960,10 @@ bool RAK_BLUES::get_uint32_entry(char *type, uint32_t &value)
 	{
 		value = note_json[type].as<uint32_t>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_uint32_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -403,6 +975,35 @@ bool RAK_BLUES::get_uint32_entry(char *type, uint32_t &value)
  * @param value (out) address of float variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	float blues_latitude;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_entry((char *)"lat"))
+			{
+				rak_blues.get_float_entry((char *)"lat", blues_latitude);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_float_entry(char *type, float &value)
 {
@@ -410,6 +1011,10 @@ bool RAK_BLUES::get_float_entry(char *type, float &value)
 	{
 		value = note_json[type].as<float>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_float_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -423,6 +1028,35 @@ bool RAK_BLUES::get_float_entry(char *type, float &value)
  * @param value_size size of target char array
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char str_value[128];
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_nested_entry((char *)"status"),(char *)"error"))
+			{
+				rak_blues.get_nested_string_entry((char *)"status"),(char *)"error"), str_value, 128);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_nested_string_entry(char *type, char *nested, char *value, uint16_t value_size)
 {
@@ -431,6 +1065,10 @@ bool RAK_BLUES::get_nested_string_entry(char *type, char *nested, char *value, u
 		char *entry_str = (char *)note_json[type].as<const char *>();
 		strncpy(value, entry_str, value_size);
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_nested_string_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -443,6 +1081,35 @@ bool RAK_BLUES::get_nested_string_entry(char *type, char *nested, char *value, u
  * @param value (out) address of signed 32bit integer variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	int32_t value;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_nested_entry((char *)"status"),(char *)"value"))
+			{
+				rak_blues.get_nested_int32_entry((char *)"status"),(char *)"value"), value);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_nested_int32_entry(char *type, char *nested, int32_t &value)
 {
@@ -450,6 +1117,10 @@ bool RAK_BLUES::get_nested_int32_entry(char *type, char *nested, int32_t &value)
 	{
 		value = note_json[type].as<int32_t>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_nested_int32_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -462,6 +1133,35 @@ bool RAK_BLUES::get_nested_int32_entry(char *type, char *nested, int32_t &value)
  * @param value (out) address of unsigned 32bit integer variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	uint32_t value;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_nested_entry((char *)"status"),(char *)"value"))
+			{
+				rak_blues.get_nested_uint32_entry((char *)"status"),(char *)"value"), value);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_nested_uint32_entry(char *type, char *nested, uint32_t &value)
 {
@@ -469,6 +1169,10 @@ bool RAK_BLUES::get_nested_uint32_entry(char *type, char *nested, uint32_t &valu
 	{
 		value = note_json[type].as<uint32_t>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_nested_uint32_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -481,6 +1185,35 @@ bool RAK_BLUES::get_nested_uint32_entry(char *type, char *nested, uint32_t &valu
  * @param value (out) address of bool variable to write the value to
  * @return true if entry was found
  * @return false if entry was not found
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	bool value;
+
+	void setup()
+	{
+		if (rak_blues.start_req((char *)"card.location"))
+		{
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			if (rak_blues.has_nested_entry((char *)"status"),(char *)"value"))
+			{
+				rak_blues.get_nested_bool_entry((char *)"status"),(char *)"value"), value);
+			}
+			return true;
+		}
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 bool RAK_BLUES::get_nested_bool_entry(char *type, char *nested, bool &value)
 {
@@ -488,6 +1221,10 @@ bool RAK_BLUES::get_nested_bool_entry(char *type, char *nested, bool &value)
 	{
 		value = note_json[type].as<bool>();
 		return true;
+	}
+	else
+	{
+		BLUES_LOG("get_nested_bool_entry", "Entry %s not found", type);
 	}
 	return false;
 }
@@ -499,6 +1236,49 @@ bool RAK_BLUES::get_nested_bool_entry(char *type, char *nested, bool &value)
  * @param string char buffer for encoding
  * @param len length of buffer
  * @return int length of encoded string
+ * @par Example
+ * @code
+   #include <Arduino.h>
+   #include <blues-minimal-i2c.h>
+   // I2C functions for Blues NoteCard
+   RAK_BLUES rak_blues;
+
+	char data[] = {0x00, 0x01, 0x02, 0x03};
+	int data_len = 4;
+	char payload_b86[255];
+
+	void setup()
+	{
+
+		if (rak_blues.start_req((char *)"note.add"))
+		{
+			rak_blues.add_string_entry((char *)"file", (char *)"data.qo");
+			rak_blues.add_bool_entry((char *)"sync", true);
+			char node_id[24];
+			sprintf(node_id, "%02x%02x%02x%02x%02x%02x%02x%02x",
+				g_lorawan_settings.node_device_eui[0], g_lorawan_settings.node_device_eui[1],
+				g_lorawan_settings.node_device_eui[2], g_lorawan_settings.node_device_eui[3],
+				g_lorawan_settings.node_device_eui[4], g_lorawan_settings.node_device_eui[5],
+				g_lorawan_settings.node_device_eui[6], g_lorawan_settings.node_device_eui[7]);
+			rak_blues.add_nested_string_entry((char *)"body", (char *)"dev_eui", node_id);
+
+			rak_blues.myJB64Encode(payload_b86, (const char *)data, data_len);
+
+			rak_blues.add_string_entry((char *)"payload", payload_b86);
+
+			if (!rak_blues.send_req())
+			{
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+   void loop()
+   {
+   }
+ * @endcode
  */
 int RAK_BLUES::myJB64Encode(char *encoded, const char *string, int len)
 {

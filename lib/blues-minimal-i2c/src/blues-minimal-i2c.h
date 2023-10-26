@@ -15,18 +15,22 @@
 #include <Wire.h>
 #include <ArduinoJson.h>
 
+/** Default Notecard I2C address */
 #define BLUES_I2C_ADDRESS 0x17
 
 #ifndef JSON_BUFF_SIZE
+/** Default JSON buffer size */
 #define JSON_BUFF_SIZE 4096
 #endif
 
 // Debug output set to 0 to disable app debug output
 #ifndef BLUES_DEBUG
-#define BLUES_DEBUG 1
+/** Enable/disable library debug output*/
+#define BLUES_DEBUG 0
 #endif
 
 #if BLUES_DEBUG > 0
+/** Debug output macro */
 #define BLUES_LOG(tag, ...)                     \
 	do                                      \
 	{                                       \
@@ -40,6 +44,10 @@
 #define BLUES_LOG(...)
 #endif
 
+/**
+ * @brief Class RAK_BLUES
+ * 
+ */
 class RAK_BLUES
 {
 public:
@@ -81,6 +89,7 @@ public:
 	bool get_uint32_entry(char *type, uint32_t &value);
 	bool get_float_entry(char *type, float &value);
 	bool get_nested_string_entry(char *type, char *nested, char *value, uint16_t value_size);
+	bool get_string_entry_from_array(char *type, char *value, uint16_t value_size);
 	bool get_nested_int32_entry(char *type, char *nested, int32_t &value);
 	bool get_nested_uint32_entry(char *type, char *nested, uint32_t &value);
 	bool get_nested_bool_entry(char *type, char *nested, bool &value);

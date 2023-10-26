@@ -97,12 +97,13 @@ bool init_blues(void);
 // bool send_req(void);
 void blues_hub_status(void);
 bool blues_get_location(void);
-bool blues_enable_attn(void);
+bool blues_enable_attn(bool motion);
 bool blues_disable_attn(void);
 bool blues_send_payload(uint8_t *data, uint16_t data_len);
 bool blues_switch_gnss_mode(bool continuous_on);
 void blues_card_restore(void);
 void blues_attn_cb(void);
+uint8_t blues_attn_reason(void);
 extern RAK_BLUES rak_blues;
 extern s_blues_settings g_blues_settings;
 
