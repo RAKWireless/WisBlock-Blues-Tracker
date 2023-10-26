@@ -434,11 +434,13 @@ void lora_data_handler(void)
 		if (g_join_result)
 		{
 			MYLOG("APP", "Successfully joined network");
+			AT_PRINTF("+EVT:JOINED");
 			send_fail = 0;
 		}
 		else
 		{
 			MYLOG("APP", "Join network failed");
+			AT_PRINTF("+EVT:JOIN_FAILED");
 		}
 	}
 

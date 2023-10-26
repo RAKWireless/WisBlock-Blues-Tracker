@@ -98,11 +98,12 @@ bool init_blues(void)
 		}
 	}
 
+	bool request_success = false;
+
 	// Get the ProductUID from the saved settings
 	// If no settings are found, use NoteCard internal settings!
 	if (read_blues_settings())
 	{
-		bool request_success = false;
 
 		MYLOG("BLUES", "Found saved settings, override NoteCard internal settings!");
 		if (memcmp(g_blues_settings.product_uid, "com.my-company.my-name", 22) == 0)
@@ -303,6 +304,7 @@ bool init_blues(void)
 		request_success = false;
 #endif
 	}
+	request_success = false;
 
 	for (int try_send = 0; try_send < 3; try_send++)
 	{
@@ -310,11 +312,12 @@ bool init_blues(void)
 		{
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
-	return true;
+	return request_success;
 }
 
 /**
