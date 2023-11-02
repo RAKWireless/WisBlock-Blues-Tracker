@@ -1,0 +1,16 @@
+Device nRF52840_xxAA
+SelectInterface SWD
+Speed auto
+Connect
+Erase
+LoadFile RAK-Blues-Tracker_V1.0.0_2023.11.02.11.01.39+bootloader.hex
+W1 000ed202, AC
+W1 000ed203, 1F
+W1 000ed204, 09
+W1 000ed205, FF
+W1 000ed206, FE
+W1 000ed207, 05
+W1 000ed208, 07
+W1 000ed209, CF
+Reset
+Exit

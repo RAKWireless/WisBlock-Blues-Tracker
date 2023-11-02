@@ -344,6 +344,30 @@ int at_query_blues_trigger(void)
 	return AT_SUCCESS;
 }
 
+int at_query_blues_imsi(void)
+{
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "ERROR");
+	//  Check if Notecard is plugged in
+	for (int try_send = 0; try_send < 5; try_send++)
+	{
+		if (rak_blues.start_req((char *)"card.version"))
+		{
+			if (rak_blues.send_req())
+			{
+				if (rak_blues.has_entry((char *)"device"))
+				{
+					rak_blues.get_string_entry((char *)"device", g_at_query_buf, ATQUERY_SIZE);
+					snprintf(g_at_query_buf, ATQUERY_SIZE, "%s", &g_at_query_buf[4]);
+				}
+				return AT_SUCCESS;
+				break;
+			}
+		}
+	}
+
+	return AT_ERRNO_EXEC_FAIL;
+}
+
 /**
  * @brief Reset saved NoteCard settings
  *
@@ -511,6 +535,7 @@ atcmd_t g_user_at_cmd_new_list[] = {
 	{"+BREQ", "Send a Blues Notecard Request", NULL, at_blues_req, NULL, "W"},
 	{"+BRES", "Factory reset Blues Notecard Request", NULL, NULL, at_blues_factory, "W"},
 	{"+BLE", "Switch on BLE advertising", NULL, NULL, at_ble_on, "W"},
+	{"+BIMSI", "Read internal IMSI", at_query_blues_imsi, NULL, NULL, "R"},
 };
 
 /** Number of user defined AT commands */

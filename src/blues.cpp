@@ -19,6 +19,8 @@ RAK_BLUES rak_blues;
 #endif
 #define myProductID PRODUCT_UID
 
+char card_response[1024];
+
 /**
  * @brief Initialize Blues NoteCard
  *
@@ -30,75 +32,132 @@ bool init_blues(void)
 	Wire.begin();
 	Wire.setClock(100000);
 
+	pinMode(WB_IO5, INPUT);
+
+	bool request_success = false;
+
+	//  Check if Notecard is plugged in
+	for (int try_send = 0; try_send < 5; try_send++)
+	{
+		if (rak_blues.start_req((char *)"card.version"))
+		{
+			if (rak_blues.send_req())
+			{
+				if (rak_blues.has_entry((char *)"device"))
+				{
+					rak_blues.get_string_entry((char *)"device", card_response, 1024);
+					AT_PRINTF("+EVT:IMEI-%s", &card_response[4]);
+				}
+
+				request_success = true;
+				break;
+			}
+		}
+	}
+
+	if (!request_success)
+	{
+		return false;
+	}
+	request_success = false;
+
 	/*******************************************************************************/
 	/** Reset all location and motion modes to non-active, just in case            */
 	/*******************************************************************************/
 	// Disable location (just in case)
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.location.mode"))
 		{
 			rak_blues.add_string_entry((char *)"mode", (char *)"off");
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.location.mode request failed");
+	}
+	request_success = false;
 
 	// Disable location tracking (just in case)
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.location.track"))
 		{
 			rak_blues.add_bool_entry((char *)"stop", true);
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.location.track request failed");
+	}
+	request_success = false;
 
 	// Disable motion mode (just in case)
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.motion.mode"))
 		{
 			rak_blues.add_bool_entry((char *)"stop", true);
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.motion.mode request failed");
+	}
+	request_success = false;
 
 	// Disable motion sync (just in case)
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.motion.sync"))
 		{
 			rak_blues.add_bool_entry((char *)"stop", true);
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.motion.sync request failed");
+	}
+	request_success = false;
 
 	// Disable motion tracking (just in case)
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.motion.track"))
 		{
 			rak_blues.add_bool_entry((char *)"stop", true);
 			if (rak_blues.send_req())
 			{
+				request_success = true;
 				break;
 			}
 		}
 	}
-
-	bool request_success = false;
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.motion.track request failed");
+	}
+	request_success = false;
 
 	// Get the ProductUID from the saved settings
 	// If no settings are found, use NoteCard internal settings!
@@ -114,7 +173,7 @@ bool init_blues(void)
 		}
 
 		MYLOG("BLUES", "Set Product ID and connection mode");
-		for (int try_send = 0; try_send < 3; try_send++)
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
 			if (rak_blues.start_req((char *)"hub.set"))
 			{
@@ -147,7 +206,7 @@ bool init_blues(void)
 		request_success = false;
 
 		// Enable motion trigger
-		for (int try_send = 0; try_send < 3; try_send++)
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
 			if (rak_blues.start_req((char *)"card.motion.mode"))
 			{
@@ -174,7 +233,7 @@ bool init_blues(void)
 		request_success = false;
 
 		// Enable GNSS mode
-		for (int try_send = 0; try_send < 3; try_send++)
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
 			if (blues_switch_gnss_mode(false))
 			{
@@ -185,7 +244,7 @@ bool init_blues(void)
 			request_success = false;
 			MYLOG("BLUES", "card.location.mode delete last location");
 			// Clear last GPS location
-			for (int try_send = 0; try_send < 3; try_send++)
+			for (int try_send = 0; try_send < 5; try_send++)
 			{
 				rak_blues.start_req((char *)"card.location.mode");
 				rak_blues.add_bool_entry((char *)"delete", true);
@@ -208,7 +267,6 @@ bool init_blues(void)
 		request_success = false;
 
 		/// \todo reset attn signal needs rework
-		pinMode(WB_IO5, INPUT);
 		if (g_blues_settings.motion_trigger)
 		{
 			if (rak_blues.start_req((char *)"card.attn"))
@@ -234,7 +292,7 @@ bool init_blues(void)
 		}
 
 		MYLOG("BLUES", "Set SIM and APN");
-		for (int try_send = 0; try_send < 3; try_send++)
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
 			if (rak_blues.start_req((char *)"card.wireless"))
 			{
@@ -275,12 +333,12 @@ bool init_blues(void)
 			MYLOG("BLUES", "card.wireless request failed");
 			return false;
 		}
-		request_success = false;
 
 #if IS_V2 == 1
+		request_success = false;
 		// Only for V2 cards, setup the WiFi network
 		MYLOG("BLUES", "Set WiFi");
-		for (int try_send = 0; try_send < 3; try_send++)
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
 			if (rak_blues.start_req((char *)"card.wifi"))
 			{
@@ -301,22 +359,9 @@ bool init_blues(void)
 		{
 			MYLOG("BLUES", "card.wifi request failed");
 		}
-		request_success = false;
 #endif
 	}
-	request_success = false;
 
-	for (int try_send = 0; try_send < 3; try_send++)
-	{
-		if (rak_blues.start_req((char *)"card.version"))
-		{
-			if (rak_blues.send_req())
-			{
-				request_success = true;
-				break;
-			}
-		}
-	}
 	return request_success;
 }
 
@@ -333,7 +378,7 @@ bool blues_send_payload(uint8_t *data, uint16_t data_len)
 	char payload_b86[255];
 	bool request_success = false;
 
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"note.add"))
 		{
@@ -375,7 +420,7 @@ bool blues_send_payload(uint8_t *data, uint16_t data_len)
 void blues_hub_status(void)
 {
 	bool request_success = false;
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		rak_blues.start_req((char *)"hub.status");
 		if (rak_blues.send_req())
@@ -401,7 +446,7 @@ bool blues_switch_gnss_mode(bool continuous_on)
 {
 	bool request_success = false;
 	MYLOG("BLUES", "Set location mode %s", continuous_on ? "continuous" : "off");
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		if (rak_blues.start_req((char *)"card.location.mode"))
 		{
@@ -448,7 +493,7 @@ bool blues_get_location(void)
 	uint32_t last_gnss_update = (uint32_t)millis();
 	uint32_t current_card_time = last_gnss_update;
 
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		rak_blues.start_req((char *)"card.location");
 		if (rak_blues.send_req())
@@ -520,7 +565,7 @@ bool blues_get_location(void)
 
 	request_success = false;
 
-	for (int try_send = 0; try_send < 3; try_send++)
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
 		rak_blues.start_req((char *)"card.time");
 		if (rak_blues.send_req())
@@ -635,10 +680,18 @@ bool blues_get_location(void)
 
 void blues_card_restore(void)
 {
-	rak_blues.start_req((char *)"hub.status");
-	rak_blues.add_bool_entry((char *)"delete", true);
-	rak_blues.add_bool_entry((char *)"connected", true);
-	rak_blues.send_req();
+	for (int try_send = 0; try_send < 5; try_send++)
+	{
+		if (rak_blues.start_req((char *)"hub.status"))
+		{
+			rak_blues.add_bool_entry((char *)"delete", true);
+			rak_blues.add_bool_entry((char *)"connected", true);
+			if (rak_blues.send_req())
+			{
+				break;
+			}
+		}
+	}
 }
 
 /**
@@ -651,77 +704,98 @@ void blues_card_restore(void)
  */
 bool blues_enable_attn(bool motion)
 {
+	bool request_success = false;
+
 	// Disarm before making changes
 	blues_disable_attn();
 
 	if (motion)
 	{
 		MYLOG("BLUES", "Enable ATTN on motion");
-		if (rak_blues.start_req((char *)"card.attn"))
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
-			rak_blues.add_string_entry((char *)"mode", (char *)"motion");
-			if (!rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+			if (rak_blues.start_req((char *)"card.attn"))
 			{
-				MYLOG("BLUES", "card.attn enable request failed");
-				return false;
+				rak_blues.add_string_entry((char *)"mode", (char *)"motion");
+				if (rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+				{
+					MYLOG("BLUES", "card.attn mode returned: %s", g_at_query_buf);
+					request_success = true;
+					break;
+				}
 			}
-			MYLOG("BLUES", "card.attn mode returned: %s", g_at_query_buf);
 		}
-		else
+		if (!request_success)
 		{
-			MYLOG("BLUES", "Request creation failed");
+			MYLOG("BLUES", "card.attn request failed");
+			return false;
 		}
-		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 
-		MYLOG("BLUES", "Arm ATTN on location");
-		if (rak_blues.start_req((char *)"card.attn"))
+		request_success = false;
+		MYLOG("BLUES", "Arm ATTN on motion");
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
-			rak_blues.add_string_entry((char *)"mode", (char *)"arm");
-			if (!rak_blues.send_req())
+			if (rak_blues.start_req((char *)"card.attn"))
 			{
-				MYLOG("BLUES", "card.attn arm request failed");
-				return false;
+				rak_blues.add_string_entry((char *)"mode", (char *)"arm");
+				if (rak_blues.send_req())
+				{
+					request_success = true;
+					break;
+				}
 			}
 		}
-		else
+		if (!request_success)
 		{
-			MYLOG("BLUES", "Request creation failed");
+			MYLOG("BLUES", "card.attn request failed");
+			return false;
 		}
+		delay(250);
+		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 	}
 	else
 	{
+		request_success = false;
 		MYLOG("BLUES", "Enable ATTN on location");
-		if (rak_blues.start_req((char *)"card.attn"))
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
-			rak_blues.add_string_entry((char *)"mode", (char *)"location");
-			if (!rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+			if (rak_blues.start_req((char *)"card.attn"))
 			{
-				MYLOG("BLUES", "card.attn enable request failed");
-				return false;
+				rak_blues.add_string_entry((char *)"mode", (char *)"location");
+				if (rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+				{
+					MYLOG("BLUES", "card.attn mode returned: %s", g_at_query_buf);
+					request_success = true;
+					break;
+				}
 			}
-			MYLOG("BLUES", "card.attn mode returned: %s", g_at_query_buf);
 		}
-		else
+		if (!request_success)
 		{
-			MYLOG("BLUES", "Request creation failed");
+			MYLOG("BLUES", "card.attn request failed");
+			return false;
 		}
 
-		MYLOG("BLUES", "Arm ATTN on motion");
-		if (rak_blues.start_req((char *)"card.attn"))
+		request_success = false;
+		MYLOG("BLUES", "Arm ATTN on location");
+		for (int try_send = 0; try_send < 5; try_send++)
 		{
-			rak_blues.add_string_entry((char *)"mode", (char *)"arm");
-			if (!rak_blues.send_req())
+			if (rak_blues.start_req((char *)"card.attn"))
 			{
-				MYLOG("BLUES", "card.attn arm request failed");
-				return false;
+				rak_blues.add_string_entry((char *)"mode", (char *)"arm");
+				if (rak_blues.send_req())
+				{
+					request_success = true;
+					break;
+				}
 			}
 		}
-		else
+		if (!request_success)
 		{
-			MYLOG("BLUES", "Request creation failed");
+			MYLOG("BLUES", "card.attn request failed");
+			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -733,48 +807,27 @@ bool blues_enable_attn(bool motion)
  */
 bool blues_disable_attn(void)
 {
-	MYLOG("BLUES", "Disable ATTN on motion");
+	MYLOG("BLUES", "Disable ATTN");
 	detachInterrupt(WB_IO5);
 
-	if (rak_blues.start_req((char *)"card.attn"))
+	bool request_success = false;
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
-		rak_blues.add_string_entry((char *)"mode", (char *)"disarm,-all");
-		if (!rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+		if (rak_blues.start_req((char *)"card.attn"))
 		{
-			MYLOG("BLUES", "card.attn request failed");
+			rak_blues.add_string_entry((char *)"mode", (char *)"disarm,-all");
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
 		}
-		MYLOG("BLUES", "card.attn disarm returned: %s", g_at_query_buf);
 	}
-	else
+	if (!request_success)
 	{
-		MYLOG("BLUES", "Request creation failed");
+		MYLOG("BLUES", "card.attn request failed");
 	}
-	// if (rak_blues.start_req((char *)"card.attn"))
-	// {
-	// 	rak_blues.add_string_entry((char *)"mode", (char *)"-motion,location");
-	// 	if (!rak_blues.send_req())
-	// 	{
-	// 		MYLOG("BLUES", "card.attn request failed");
-	// 	}
-	// }
-	// else
-	// {
-	// 	MYLOG("BLUES", "Request creation failed");
-	// }
-	// if (rak_blues.start_req((char *)"card.attn"))
-	// {
-	// 	rak_blues.add_string_entry((char *)"mode", (char *)"arm");
-	// 	if (!rak_blues.send_req())
-	// 	{
-	// 		MYLOG("BLUES", "card.attn request failed");
-	// 	}
-	// }
-	// else
-	// {
-	// 	MYLOG("BLUES", "Request creation failed");
-	// }
-
-	return true;
+	return request_success;
 }
 
 char attn_msg[256];
@@ -789,40 +842,45 @@ char attn_msg[256];
  */
 uint8_t blues_attn_reason(void)
 {
+	bool request_success = false;
 	uint8_t result = 0;
-	if (rak_blues.start_req((char *)"card.attn"))
+	for (int try_send = 0; try_send < 5; try_send++)
 	{
-		if (!rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+		if (rak_blues.start_req((char *)"card.attn"))
 		{
-			MYLOG("BLUES", "card.attn check request failed");
-			return result;
+			if (rak_blues.send_req(g_at_query_buf, ATQUERY_SIZE))
+			{
+				MYLOG("BLUES", "card.attn mode returned: %s", g_at_query_buf);
+				request_success = true;
+				break;
+			}
+		}
+	}
+	if (request_success)
+	{
+		MYLOG("BLUES", "card.attn check returned: %s", g_at_query_buf);
+		if (rak_blues.has_entry((char *)"files"))
+		{
+			rak_blues.get_string_entry_from_array((char *)"files", attn_msg, 255);
+			MYLOG("BLUES", "card.attn files: %s", attn_msg);
+			String motion_str = "motion";
+			String location_str = "location";
+			String response_str = String(attn_msg);
+
+			if (response_str.indexOf(motion_str) != -1)
+			{
+				MYLOG("BLUES", "card.attn for MOTION");
+				result += 1;
+			}
+			if (response_str.indexOf(location_str) != -1)
+			{
+				MYLOG("BLUES", "card.attn for LOCATION");
+				result += 2;
+			}
 		}
 		else
 		{
-			MYLOG("BLUES", "card.attn check returned: %s", g_at_query_buf);
-			if (rak_blues.has_entry((char *)"files"))
-			{
-				rak_blues.get_string_entry_from_array((char *)"files", attn_msg, 255);
-				MYLOG("BLUES", "card.attn files: %s", attn_msg);
-				String motion_str = "motion";
-				String location_str = "location";
-				String response_str = String(attn_msg);
-
-				if (response_str.indexOf(motion_str) != -1)
-				{
-					MYLOG("BLUES", "card.attn for MOTION");
-					result += 1;
-				}
-				if (response_str.indexOf(location_str) != -1)
-				{
-					MYLOG("BLUES", "card.attn for LOCATION");
-					result += 2;
-				}
-			}
-			else
-			{
-				MYLOG("BLUES", "card.attn files missing");
-			}
+			MYLOG("BLUES", "card.attn files missing");
 		}
 	}
 	else
