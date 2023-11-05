@@ -418,6 +418,7 @@ bool blues_send_payload(uint8_t *data, uint16_t data_len)
 
 			if (rak_blues.send_req())
 			{
+				AT_PRINTF("+EVT:TX_CELL_OK");
 				request_success = true;
 				break;
 			}
@@ -426,6 +427,7 @@ bool blues_send_payload(uint8_t *data, uint16_t data_len)
 	if (!request_success)
 	{
 		MYLOG("BLUES", "Send request failed");
+		AT_PRINTF("+EVT:TX_CELL_FAIL");
 		return false;
 	}
 

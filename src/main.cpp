@@ -465,7 +465,14 @@ void lora_data_handler(void)
 		g_task_event_type &= N_LORA_TX_FIN;
 
 		MYLOG("APP", "LPWAN TX cycle %s", g_rx_fin_result ? "finished ACK" : "failed NAK");
-
+		if (g_lorawan_settings.confirmed_msg_enabled)
+		{
+			AT_PRINTF("+EVT:TX_%s", g_rx_fin_result ? "ACK" : "NAK");
+		}
+		else
+		{
+		AT_PRINTF("+EVT:TX_FINISHED");
+		}
 		if (!g_rx_fin_result)
 		{
 			if (g_lorawan_settings.lorawan_enable)
