@@ -46,17 +46,25 @@ bool init_blues(void)
 				if (rak_blues.has_entry((char *)"device"))
 				{
 					rak_blues.get_string_entry((char *)"device", card_response, 1024);
-					AT_PRINTF("+EVT:IMEI-%s", &card_response[4]);
+					AT_PRINTF("+EVT:IMSI-%s", &card_response[4]);
 				}
-
+				else
+				{
+					MYLOG("BLUES", "Did not find Device");
+				}
 				request_success = true;
 				break;
 			}
+		}
+		else
+		{
+			MYLOG("BLUES", "start_req failed");
 		}
 	}
 
 	if (!request_success)
 	{
+		MYLOG("BLUES", "card.version request failed");
 		return false;
 	}
 	request_success = false;
@@ -157,12 +165,12 @@ bool init_blues(void)
 	{
 		MYLOG("BLUES", "card.motion.track request failed");
 	}
-	request_success = false;
 
 	// Get the ProductUID from the saved settings
 	// If no settings are found, use NoteCard internal settings!
 	if (read_blues_settings())
 	{
+		request_success = false;
 
 		MYLOG("BLUES", "Found saved settings, override NoteCard internal settings!");
 		if (memcmp(g_blues_settings.product_uid, "com.my-company.my-name", 22) == 0)
@@ -201,6 +209,50 @@ bool init_blues(void)
 		if (!request_success)
 		{
 			MYLOG("BLUES", "hub.set request failed");
+			return false;
+		}
+		request_success = false;
+
+		MYLOG("BLUES", "Set SIM and APN");
+		for (int try_send = 0; try_send < 5; try_send++)
+		{
+			if (rak_blues.start_req((char *)"card.wireless"))
+			{
+				rak_blues.add_string_entry((char *)"mode", (char *)"auto");
+
+				switch (g_blues_settings.sim_usage)
+				{
+				case 0:
+					// USING BLUES eSIM CARD
+					rak_blues.add_string_entry((char *)"method", (char *)"primary");
+					break;
+				case 1:
+					// USING EXTERNAL SIM CARD only
+					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
+					rak_blues.add_string_entry((char *)"method", (char *)"secondary");
+					break;
+				case 2:
+					// USING EXTERNAL SIM CARD as primary
+					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
+					rak_blues.add_string_entry((char *)"method", (char *)"dual-secondary-primary");
+					break;
+				case 3:
+					// USING EXTERNAL SIM CARD as secondary
+					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
+					rak_blues.add_string_entry((char *)"method", (char *)"dual-primary-secondary");
+					break;
+				}
+
+				if (rak_blues.send_req())
+				{
+					request_success = true;
+					break;
+				}
+			}
+		}
+		if (!request_success)
+		{
+			MYLOG("BLUES", "card.wireless request failed");
 			return false;
 		}
 		request_success = false;
@@ -254,14 +306,10 @@ bool init_blues(void)
 					break;
 				}
 			}
-			if (!request_success)
-			{
-				MYLOG("BLUES", "card.location.mode delete last location request failed");
-			}
 		}
 		if (!request_success)
 		{
-			MYLOG("BLUES", "card.location.mode request failed");
+			MYLOG("BLUES", "card.location.mode delete last location request failed");
 			return false;
 		}
 		request_success = false;
@@ -269,100 +317,70 @@ bool init_blues(void)
 		/// \todo reset attn signal needs rework
 		if (g_blues_settings.motion_trigger)
 		{
-			if (rak_blues.start_req((char *)"card.attn"))
+			for (int try_send = 0; try_send < 5; try_send++)
 			{
-				rak_blues.add_string_entry((char *)"mode", (char *)"disarm");
-				if (!rak_blues.send_req())
+				if (rak_blues.start_req((char *)"card.attn"))
 				{
-					MYLOG("BLUES", "card.attn disarm request failed");
-				}
-
-				/// \todo reset attn signal needs rework
-				if (!blues_enable_attn(true))
-				{
-					MYLOG("BLUES", "blues_enable_attn enable failed");
-					return false;
+					rak_blues.add_string_entry((char *)"mode", (char *)"disarm");
+					if (rak_blues.send_req())
+					{
+						request_success = true;
+						break;
+					}
 				}
 			}
+			if (!request_success)
+			{
+				MYLOG("BLUES", "card.attn disarm request failed");
+				return false;
+			}
+			request_success = false;
 		}
 		else
 		{
 			MYLOG("BLUES", "Motion trigger disabled");
-			// return false;
 		}
 
-		MYLOG("BLUES", "Set SIM and APN");
-		for (int try_send = 0; try_send < 5; try_send++)
+		/// \todo reset attn signal needs rework
+		if (!blues_enable_attn(true))
 		{
-			if (rak_blues.start_req((char *)"card.wireless"))
-			{
-				rak_blues.add_string_entry((char *)"mode", (char *)"auto");
-
-				switch (g_blues_settings.sim_usage)
-				{
-				case 0:
-					// USING BLUES eSIM CARD
-					rak_blues.add_string_entry((char *)"method", (char *)"primary");
-					break;
-				case 1:
-					// USING EXTERNAL SIM CARD only
-					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
-					rak_blues.add_string_entry((char *)"method", (char *)"secondary");
-					break;
-				case 2:
-					// USING EXTERNAL SIM CARD as primary
-					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
-					rak_blues.add_string_entry((char *)"method", (char *)"dual-secondary-primary");
-					break;
-				case 3:
-					// USING EXTERNAL SIM CARD as secondary
-					rak_blues.add_string_entry((char *)"apn", g_blues_settings.ext_sim_apn);
-					rak_blues.add_string_entry((char *)"method", (char *)"dual-primary-secondary");
-					break;
-				}
-
-				if (rak_blues.send_req())
-				{
-					request_success = true;
-					break;
-				}
-			}
-		}
-		if (!request_success)
-		{
-			MYLOG("BLUES", "card.wireless request failed");
+			MYLOG("BLUES", "blues_enable_attn enable failed");
 			return false;
 		}
-
-#if IS_V2 == 1
-		request_success = false;
-		// Only for V2 cards, setup the WiFi network
-		MYLOG("BLUES", "Set WiFi");
-		for (int try_send = 0; try_send < 5; try_send++)
-		{
-			if (rak_blues.start_req((char *)"card.wifi"))
-			{
-				rak_blues.add_string_entry((char *)"ssid", (char *)"-");
-				rak_blues.add_string_entry((char *)"password", (char *)"-");
-				rak_blues.add_string_entry((char *)"name", (char *)"-");
-				rak_blues.add_string_entry((char *)"org", (char *)"");
-				rak_blues.add_bool_entry((char *)"start", false);
-
-				if (rak_blues.send_req())
-				{
-					request_success = true;
-					break;
-				}
-			}
-		}
-		if (!request_success)
-		{
-			MYLOG("BLUES", "card.wifi request failed");
-		}
-#endif
+	}
+	else
+	{
+		request_success = true;
 	}
 
-	return request_success;
+#if IS_V2 == 1
+	request_success = false;
+	// Only for V2 cards, setup the WiFi network
+	MYLOG("BLUES", "Set WiFi");
+	for (int try_send = 0; try_send < 5; try_send++)
+	{
+		if (rak_blues.start_req((char *)"card.wifi"))
+		{
+			rak_blues.add_string_entry((char *)"ssid", (char *)"-");
+			rak_blues.add_string_entry((char *)"password", (char *)"-");
+			rak_blues.add_string_entry((char *)"name", (char *)"-");
+			rak_blues.add_string_entry((char *)"org", (char *)"");
+			rak_blues.add_bool_entry((char *)"start", false);
+
+			if (rak_blues.send_req())
+			{
+				request_success = true;
+				break;
+			}
+		}
+	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.wifi request failed");
+		return false;
+	}
+#endif
+	return true;
 }
 
 /**
@@ -730,8 +748,8 @@ bool blues_enable_attn(bool motion)
 			MYLOG("BLUES", "card.attn request failed");
 			return false;
 		}
-
 		request_success = false;
+
 		MYLOG("BLUES", "Arm ATTN on motion");
 		for (int try_send = 0; try_send < 5; try_send++)
 		{
