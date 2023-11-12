@@ -164,8 +164,19 @@ void app_event_handler(void)
 		else
 		{
 			MYLOG("APP", "GNSS inactive, start it");
-			blues_switch_gnss_mode(true);
 			gnss_active = true;
+
+			// Enable GNSS
+			blues_switch_gnss_mode(true);
+
+			// Enable Location event
+			if (!blues_enable_attn(false))
+			{
+				MYLOG("APP", "Rearm location trigger failed");
+			}
+
+			api_timer_stop();
+
 			wait_gnss.start();
 		}
 	}
@@ -179,6 +190,14 @@ void app_event_handler(void)
 		gnss_active = false;
 		api_timer_start();
 
+		if (!blues_get_location())
+		{
+			MYLOG("APP", "Failed to get location");
+		}
+
+		// Disable GNSS
+		blues_switch_gnss_mode(false);
+
 		// Enable motion trigger
 		if (!blues_enable_attn(true))
 		{
@@ -187,14 +206,6 @@ void app_event_handler(void)
 
 		// Reset the packet
 		g_solution_data.reset();
-
-		if (!blues_get_location())
-		{
-			MYLOG("APP", "Failed to get location");
-		}
-
-		// Disable GNSS
-		blues_switch_gnss_mode(false);
 
 		// Get battery level
 		float batt_level_f = read_batt();
@@ -372,6 +383,7 @@ void app_event_handler(void)
 			else
 			{
 				MYLOG("APP", "GNSS inactive, start it");
+				gnss_active = true;
 
 				// Enable GNSS
 				blues_switch_gnss_mode(true);

@@ -771,6 +771,7 @@ bool blues_enable_attn(bool motion)
 			return false;
 		}
 		delay(250);
+		MYLOG("BLUES", "Attach interrupt on motion");
 		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 	}
 	else
@@ -815,6 +816,8 @@ bool blues_enable_attn(bool motion)
 			MYLOG("BLUES", "card.attn request failed");
 			return false;
 		}
+		MYLOG("BLUES", "Attach interrupt on location");
+		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 	}
 	return true;
 }
