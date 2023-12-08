@@ -31,11 +31,35 @@ bool has_rak1906 = false;
 /** Flag is Blues Notecard was found */
 bool has_blues = false;
 
+#ifdef NRF52_SERIES
 SoftwareTimer delayed_sending;
 void delayed_cellular(TimerHandle_t unused);
+#endif
+#ifdef ESP32
+Ticker delayed_sending;
+void delayed_cellular(void);
+#endif
 
+#ifdef NRF52_SERIES
 SoftwareTimer wait_gnss;
 void waited_location(TimerHandle_t unused);
+
+SoftwareTimer blink_blue;
+void toggle_blue(TimerHandle_t unused);
+
+SoftwareTimer blink_green;
+void toggle_green(TimerHandle_t unused);
+#endif
+#ifdef ESP32
+Ticker wait_gnss;
+void waited_location(void);
+
+Ticker blink_blue;
+void toggle_blue(void);
+
+Ticker blink_green;
+void toggle_green(void);
+#endif
 
 bool gnss_active = false;
 
@@ -47,6 +71,15 @@ uint8_t send_counter = 0;
  */
 void setup_app(void)
 {
+#ifdef _CUSTOM_BOARD_
+	// Initialize the built in LED
+	pinMode(LED_GREEN, OUTPUT);
+	digitalWrite(LED_GREEN, LOW);
+
+	// Initialize the connection status LED
+	pinMode(LED_BLUE, OUTPUT);
+	digitalWrite(LED_BLUE, HIGH);
+#endif
 	Serial.begin(115200);
 	time_t serial_timeout = millis();
 	// On nRF52840 the USB serial is not available immediately
@@ -111,10 +144,16 @@ bool init_app(void)
 	MYLOG("APP", "restart_advertising");
 	restart_advertising(30);
 
+#ifdef NRF52_SERIES
+	// Initialize delayed sending timer
 	delayed_sending.begin(15000, delayed_cellular, NULL, false);
 
 	// Set GNSS scan time to 2 minutes
 	wait_gnss.begin(120000, waited_location, NULL, false);
+#endif
+#ifdef ESP32
+// no init for ESP32 ticker
+#endif
 
 	// Start the send interval timer and send a first message
 	if (!g_lorawan_settings.auto_join)
@@ -137,6 +176,15 @@ bool init_app(void)
 	MYLOG("APP", "api_timer_start");
 	api_timer_start();
 	api_wake_loop(STATUS);
+
+	// Initialize LED toggle timer
+#ifdef NRF52_SERIES
+	blink_blue.begin(1000, toggle_blue, NULL, true);
+	blink_green.begin(10000, toggle_green, NULL, false);
+#endif
+#ifdef ESP32
+// no init for ESP32 ticker
+#endif
 
 	return true;
 }
@@ -178,6 +226,9 @@ void app_event_handler(void)
 			api_timer_stop();
 
 			wait_gnss.start();
+
+			digitalWrite(LED_BLUE, HIGH);
+			blink_blue.start();
 		}
 	}
 
@@ -186,13 +237,25 @@ void app_event_handler(void)
 	{
 		g_task_event_type &= N_GNSS_FINISH;
 
+		blink_blue.stop();
+		digitalWrite(LED_BLUE, LOW);
+
 		MYLOG("APP", "GNSS wait finished");
 		gnss_active = false;
 		api_timer_start();
 
+		// Reset the packet
+		g_solution_data.reset();
+
 		if (!blues_get_location())
 		{
 			MYLOG("APP", "Failed to get location");
+			// blink_green.stop();
+		}
+		else
+		{
+			// blink_green.setPeriod(500);
+			// blink_green.start();
 		}
 
 		// Disable GNSS
@@ -203,9 +266,6 @@ void app_event_handler(void)
 		{
 			MYLOG("APP", "Rearm location trigger failed");
 		}
-
-		// Reset the packet
-		g_solution_data.reset();
 
 		// Get battery level
 		float batt_level_f = read_batt();
@@ -397,6 +457,9 @@ void app_event_handler(void)
 				api_timer_stop();
 
 				wait_gnss.start();
+
+				digitalWrite(LED_BLUE, HIGH);
+				blink_blue.start();
 			}
 			break;
 			// Location fix (We ignore if motion and location found are reported together)
@@ -483,7 +546,7 @@ void lora_data_handler(void)
 		}
 		else
 		{
-		AT_PRINTF("+EVT:TX_FINISHED");
+			AT_PRINTF("+EVT:TX_FINISHED");
 		}
 		if (!g_rx_fin_result)
 		{
@@ -522,4 +585,25 @@ void delayed_cellular(TimerHandle_t unused)
 void waited_location(TimerHandle_t unused)
 {
 	api_wake_loop(GNSS_FINISH);
+}
+
+void toggle_blue(TimerHandle_t unused)
+{
+	digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
+}
+
+void toggle_green(TimerHandle_t unused)
+{
+	int status = digitalRead(LED_GREEN);
+	if (status == HIGH)
+	{
+		digitalWrite(LED_GREEN, LOW);
+		blink_green.setPeriod(4500);
+	}
+	else
+	{
+		digitalWrite(LED_GREEN, HIGH);
+		blink_green.setPeriod(500);
+	}
+	blink_green.start();
 }

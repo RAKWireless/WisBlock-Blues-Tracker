@@ -14,6 +14,9 @@
 
 #include <Arduino.h>
 #include <WisBlock-API-V2.h>
+#ifdef ESP32
+#include <WiFi.h>
+#endif
 #include "RAK1906_env.h"
 #include <ArduinoJson.h>
 
@@ -22,6 +25,7 @@
 #define MY_DEBUG 1
 #endif
 
+#ifdef NRF52_SERIES
 #if MY_DEBUG > 0
 #define MYLOG(tag, ...)                     \
 	do                                      \
@@ -39,6 +43,22 @@
 	} while (0)
 #else
 #define MYLOG(...)
+#endif
+#endif
+#ifdef ESP32
+#if MY_DEBUG > 0
+#define MYLOG(tag, ...)                     \
+	do                                      \
+	{                                       \
+		if (tag)                            \
+			PRINTF("[%s] ", tag);           \
+		PRINTF(__VA_ARGS__);                \
+		PRINTF("\n");                       \
+		Serial.flush();                     \
+	} while (0)
+#else
+#define MYLOG(...)
+#endif
 #endif
 
 /** Define the version of your SW */
@@ -78,6 +98,12 @@ void lora_data_handler(void);
 
 // Globals
 extern WisCayenne g_solution_data;
+#ifdef NRF52_SERIES
+extern SoftwareTimer blink_green;
+#endif
+#ifdef ESP32
+extern Ticker blink_green;
+#endif
 
 // Blues.io
 struct s_blues_settings
@@ -104,6 +130,7 @@ bool blues_switch_gnss_mode(bool continuous_on);
 void blues_card_restore(void);
 void blues_attn_cb(void);
 uint8_t blues_attn_reason(void);
+bool blues_hub_connected(void);
 extern RAK_BLUES rak_blues;
 extern s_blues_settings g_blues_settings;
 

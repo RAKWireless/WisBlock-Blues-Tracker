@@ -350,7 +350,131 @@ bool init_blues(void)
 	}
 	else
 	{
-		request_success = true;
+		MYLOG("BLUES", "No saved Blues NoteCard settings, read existing settings");
+		for (int try_send = 0; try_send < 3; try_send++)
+		{
+			if (rak_blues.start_req((char *)"card.wireless"))
+			{
+				if (rak_blues.send_req())
+				{
+					if (rak_blues.has_entry((char *)"apn"))
+					{
+						rak_blues.get_string_entry((char *)"apn", g_blues_settings.ext_sim_apn, 256);
+						MYLOG("BLUES", "Got APN %s", g_blues_settings.ext_sim_apn);
+					}
+					else
+					{
+						MYLOG("BLUES", "No APN from NoteCard");
+						// no entry, assume no APN
+						g_blues_settings.ext_sim_apn[0] = 0;
+					}
+					if (rak_blues.has_entry((char *)"method"))
+					{
+						MYLOG("BLUES", "Got Method from NoteCard");
+						char method_str[256];
+						rak_blues.get_string_entry((char *)"method", method_str, 256);
+						if (strcmp(method_str, "primary") == 0)
+						{
+							g_blues_settings.sim_usage = 0;
+						}
+						else if (strcmp(method_str, "secondary") == 0)
+						{
+							g_blues_settings.sim_usage = 1;
+						}
+						else if (strcmp(method_str, "dual-secondary-primary") == 0)
+						{
+							g_blues_settings.sim_usage = 2;
+						}
+						else if (strcmp(method_str, "dual-primary-secondary") == 0)
+						{
+							g_blues_settings.sim_usage = 3;
+						}
+						else
+						{
+							// no match, assume primary
+							g_blues_settings.sim_usage = 0;
+						}
+					}
+					else
+					{
+						MYLOG("BLUES", "No Method from NoteCard");
+						// no entry, assume primary
+						g_blues_settings.sim_usage = 0;
+					}
+					request_success = true;
+					break;
+				}
+				else
+				{
+					MYLOG("BLUES", "Send request failed : card.wireless");
+				}
+			}
+			else
+			{
+				MYLOG("BLUES", "Start request failed");
+			}
+		}
+		request_success = false;
+
+		for (int try_send = 0; try_send < 3; try_send++)
+		{
+			if (rak_blues.start_req((char *)"hub.get"))
+			{
+				if (rak_blues.send_req())
+				{
+					if (rak_blues.has_entry((char *)"product"))
+					{
+						MYLOG("BLUES", "Got Product from NoteCard");
+						rak_blues.get_string_entry((char *)"product", g_blues_settings.product_uid, 256);
+					}
+					else
+					{
+						MYLOG("BLUES", "No Product from NoteCard");
+						// no entry, assume no UID set
+						g_blues_settings.product_uid[0] = 0;
+					}
+					if (rak_blues.has_entry((char *)"mode"))
+					{
+						MYLOG("BLUES", "Got Mode from NoteCard");
+						char mode_str[256];
+						rak_blues.get_string_entry((char *)"mode", mode_str, 256);
+						if (strcmp(mode_str, "minimum") == 0)
+						{
+							g_blues_settings.conn_continous = false;
+						}
+						else if (strcmp(mode_str, "continous") == 0)
+						{
+							g_blues_settings.conn_continous = true;
+						}
+						else if (strcmp(mode_str, "periodic") == 0)
+						{
+							g_blues_settings.conn_continous = true;
+						}
+						else
+						{
+							// no match, assume continous
+							g_blues_settings.conn_continous = true;
+						}
+					}
+					else
+					{
+						MYLOG("BLUES", "No Mode from NoteCard");
+						// no match, assume continous
+						g_blues_settings.conn_continous = true;
+					}
+					request_success = true;
+					break;
+				}
+				else
+				{
+					MYLOG("BLUES", "Send request failed : hub.get");
+				}
+			}
+			else
+			{
+				MYLOG("BLUES", "Start request failed");
+			}
+		}
 	}
 
 #if IS_V2 == 1
@@ -583,6 +707,18 @@ bool blues_get_location(void)
 		MYLOG("BLUES", "card.location request failed");
 	}
 
+	// Blink green LED if we found a GNSS location
+	if (got_gnss_location)
+	{
+		digitalWrite(LED_GREEN, HIGH);
+		blink_green.setPeriod(500);
+		blink_green.start();
+	}
+	else
+	{
+		blink_green.stop();
+		digitalWrite(LED_GREEN, LOW);
+	}
 	request_success = false;
 
 	for (int try_send = 0; try_send < 5; try_send++)
@@ -772,6 +908,7 @@ bool blues_enable_attn(bool motion)
 		}
 		delay(250);
 		MYLOG("BLUES", "Attach interrupt on motion");
+		detachInterrupt(WB_IO5);
 		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 	}
 	else
@@ -817,6 +954,7 @@ bool blues_enable_attn(bool motion)
 			return false;
 		}
 		MYLOG("BLUES", "Attach interrupt on location");
+		detachInterrupt(WB_IO5);
 		attachInterrupt(WB_IO5, blues_attn_cb, RISING);
 	}
 	return true;
@@ -922,4 +1060,40 @@ uint8_t blues_attn_reason(void)
 void blues_attn_cb(void)
 {
 	api_wake_loop(BLUES_ATTN);
+}
+
+/**
+ * @brief Check connection to cellular network
+ *
+ * @return true if connection is/was established
+ * @return false if no connection
+ */
+bool blues_hub_connected(void)
+{
+	bool request_success = false;
+	bool cellular_connected = false;
+	for (int try_send = 0; try_send < 5; try_send++)
+	{
+		if (rak_blues.start_req((char *)"card.wireless"))
+		{
+			if (rak_blues.send_req())
+			{
+				if (rak_blues.has_entry((char *)"net"))
+				{
+					if (rak_blues.has_nested_entry((char *)"net", (char *)"band"))
+					{
+						cellular_connected = true;
+					}
+					request_success = true;
+					break;
+				}
+			}
+		}
+	}
+	if (!request_success)
+	{
+		MYLOG("BLUES", "card.wireless request failed");
+		return false;
+	}
+	return cellular_connected;
 }

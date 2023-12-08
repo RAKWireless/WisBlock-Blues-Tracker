@@ -10,6 +10,10 @@
  */
 #include "main.h"
 
+/** Structure for saved Blues Notecard settings */
+s_blues_settings g_blues_settings;
+
+#ifdef NRF52_SERIES
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
 using namespace Adafruit_LittleFS_Namespace;
@@ -19,9 +23,6 @@ static const char blues_file_name[] = "BLUES";
 
 /** File to save battery check status */
 File this_file(InternalFS);
-
-/** Structure for saved Blues Notecard settings */
-s_blues_settings g_blues_settings;
 
 #define REQ_PRINTF(...)                     \
 	do                                      \
@@ -35,6 +36,26 @@ s_blues_settings g_blues_settings;
 			g_ble_uart.printf("\n");        \
 		}                                   \
 	} while (0)
+#endif
+
+#ifdef ESP32
+#include <Preferences.h>
+
+/** ESP32 preferences */
+Preferences blues_prefs;
+
+#define REQ_PRINTF(...)                                                 \
+	Serial.printf(__VA_ARGS__);                                         \
+	Serial.printf("\n");                                                \
+	if (g_ble_uart_is_connected)                                        \
+	{                                                                   \
+		char buff[255];                                                 \
+		int len = sprintf(buff, __VA_ARGS__);                           \
+		uart_tx_characteristic->setValue((uint8_t *)buff, (size_t)len); \
+		uart_tx_characteristic->notify(true);                           \
+		delay(50);                                                      \
+	}
+#endif
 
 /**
  * @brief Set Blues Product UID
@@ -258,7 +279,7 @@ int at_set_blues_mode(char *str)
 	}
 	else
 	{
-		MYLOG("USR_AT", "Invalid motion trigger flag %d", str[0]);
+		MYLOG("USR_AT", "Invalid connection mode flag %d", str[0]);
 		return AT_ERRNO_PARA_NUM;
 	}
 
@@ -375,11 +396,22 @@ int at_query_blues_imsi(void)
  */
 static int at_reset_blues_settings(void)
 {
+#ifdef NRF52_SERIES
 	if (InternalFS.exists(blues_file_name))
 	{
 		InternalFS.remove(blues_file_name);
 	}
 	return AT_SUCCESS;
+#endif
+#ifdef ESP32
+	blues_prefs.begin("BluesCred", false);
+
+	blues_prefs.clear();
+
+	blues_prefs.end();
+
+	return AT_SUCCESS;
+#endif
 }
 
 /**
@@ -401,6 +433,30 @@ static int at_blues_factory(void)
 static int at_ble_on(void)
 {
 	restart_advertising(30);
+	return AT_SUCCESS;
+}
+
+static int at_blues_report_status(void)
+{
+	REQ_PRINTF("BUID %s", g_blues_settings.product_uid);
+	REQ_PRINTF("Connection Mode %s", g_blues_settings.conn_continous ? "Continous" : "Minimal");
+	switch (g_blues_settings.sim_usage)
+	{
+	case 0:
+		REQ_PRINTF("Selected SIM card: internal only");
+		break;
+	case 1:
+		REQ_PRINTF("Selected SIM card: external only - APN: %s", g_blues_settings.ext_sim_apn);
+		break;
+	case 2:
+		REQ_PRINTF("Selected SIM card: external primary, internal secondary - APN: %s", g_blues_settings.ext_sim_apn);
+		break;
+	case 3:
+		REQ_PRINTF("Selected SIM card: internal primary, external secondary - APN: %s", g_blues_settings.ext_sim_apn);
+		break;
+	}
+	REQ_PRINTF("Cellular network: %s", blues_hub_connected() ? "Connected" : "Not Connected");
+
 	return AT_SUCCESS;
 }
 
@@ -433,6 +489,7 @@ int at_blues_status(void)
  */
 bool read_blues_settings(void)
 {
+#ifdef NRF52_SERIES
 	bool structure_valid = false;
 	if (InternalFS.exists(blues_file_name))
 	{
@@ -445,13 +502,20 @@ bool read_blues_settings(void)
 		{
 			structure_valid = true;
 			MYLOG("USR_AT", "Valid Blues settings found, Blues Product UID = %s", g_blues_settings.product_uid);
-			if (g_blues_settings.sim_usage)
+			switch (g_blues_settings.sim_usage)
 			{
-				MYLOG("USR_AT", "Using external SIM with APN = %s", g_blues_settings.ext_sim_apn);
-			}
-			else
-			{
-				MYLOG("USR_AT", "Using eSIM");
+			case 0:
+				MYLOG("USR_AT", "Selected SIM card: internal only");
+				break;
+			case 1:
+				MYLOG("USR_AT", "Selected SIM card: external only - APN: %s", g_blues_settings.ext_sim_apn);
+				break;
+			case 2:
+				MYLOG("USR_AT", "Selected SIM card: external primary, internal secondary - APN: %s", g_blues_settings.ext_sim_apn);
+				break;
+			case 3:
+				MYLOG("USR_AT", "Selected SIM card: internal primary, external secondary - APN: %s", g_blues_settings.ext_sim_apn);
+				break;
 			}
 		}
 		else
@@ -475,6 +539,28 @@ bool read_blues_settings(void)
 	}
 
 	return true;
+#endif
+#ifdef ESP32
+	bool valid_prefs = false;
+	blues_prefs.begin("BluesCred", false);
+
+	uint16_t hasPrefs = blues_prefs.getLong("valid", 0); // Validity marker
+
+	if (hasPrefs == 0xAA55)
+	{
+		valid_prefs = true;
+		blues_prefs.getString("uid", &g_blues_settings.product_uid[0], 256);  // Blues Product UID
+		MYLOG("USR_AT", "Valid Blues settings found, Blues Product UID = %s", g_blues_settings.product_uid);
+		g_blues_settings.conn_continous = blues_prefs.getBool("mode", false); // Use periodic connection
+		g_blues_settings.sim_usage = blues_prefs.getShort("sim", 0);		  // 0 int SIM, 1 ext SIM, 2 ext int SIM, 3 int ext SIM
+		blues_prefs.getString("apn", &g_blues_settings.ext_sim_apn[0], 256);  // APN to be used with external SIM
+		g_blues_settings.motion_trigger = blues_prefs.getBool("acc", false);  // Send data on motion trigger
+	}
+
+	blues_prefs.end();
+
+	return valid_prefs;
+#endif
 }
 
 /**
@@ -483,6 +569,7 @@ bool read_blues_settings(void)
  */
 void save_blues_settings(void)
 {
+#ifdef NRF52_SERIES
 	if (InternalFS.exists(blues_file_name))
 	{
 		InternalFS.remove(blues_file_name);
@@ -493,6 +580,20 @@ void save_blues_settings(void)
 	this_file.write((const char *)&g_blues_settings.valid_mark, sizeof(s_blues_settings));
 	this_file.close();
 	MYLOG("USR_AT", "Saved Blues Settings");
+#endif
+#ifdef ESP32
+	blues_prefs.begin("BluesCred", false);
+
+	blues_prefs.putLong("valid", 0xAA55); // Validity marker
+
+	blues_prefs.putString("uid", &g_blues_settings.product_uid[0]);									// Blues Product UID
+	g_blues_settings.conn_continous = blues_prefs.putBool("mode", g_blues_settings.conn_continous); // Use periodic connection
+	g_blues_settings.sim_usage = blues_prefs.putShort("sim", g_blues_settings.sim_usage);			// 0 int SIM, 1 ext SIM, 2 ext int SIM, 3 int ext SIM
+	blues_prefs.putString("apn", &g_blues_settings.ext_sim_apn[0]);									// APN to be used with external SIM
+	g_blues_settings.motion_trigger = blues_prefs.putBool("acc", g_blues_settings.motion_trigger);	// Send data on motion trigger
+
+	blues_prefs.end();
+#endif
 }
 
 int at_blues_req(char *str)
@@ -536,6 +637,7 @@ atcmd_t g_user_at_cmd_new_list[] = {
 	{"+BRES", "Factory reset Blues Notecard Request", NULL, NULL, at_blues_factory, "W"},
 	{"+BLE", "Switch on BLE advertising", NULL, NULL, at_ble_on, "W"},
 	{"+BIMSI", "Read internal IMSI", at_query_blues_imsi, NULL, NULL, "R"},
+	{"+BSTATUS", "Blues settings", NULL, NULL, at_blues_report_status, "W"},
 };
 
 /** Number of user defined AT commands */
@@ -556,4 +658,9 @@ void init_user_at(void)
 	// Add AT commands to structure
 	g_user_at_cmd_num += sizeof(g_user_at_cmd_new_list) / sizeof(atcmd_t);
 	MYLOG("USR_AT", "Added %d User AT commands", g_user_at_cmd_num);
+
+#ifdef ESP32
+	// ESP32 has a problem with weak declarations of functions
+	has_custom_at = true;
+#endif
 }

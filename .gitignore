@@ -7,3 +7,4 @@ Netlify.txt
 src/product_uid.h
 Debug-Build
 Build
+telegraf.conf
